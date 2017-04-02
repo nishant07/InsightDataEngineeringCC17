@@ -1,3 +1,4 @@
+import re
 from sys import argv
 from heapq import *
 from collections import Counter
@@ -31,15 +32,27 @@ def top_k_elements(element_dict, top_k=[], k=10):
 			pass
 	return top_k
 
-def decompose_server_log(sever_log):
+def decompose_server_log(server_log):
 	""" Decomposes each log into host, timestamp, resource, 
 		HTTP reply code, bytes.
+	
 	Args:
 		server_log (str): A server log
 	Returns:
 		tuple: A tuple with decomposed values mentioned in the definition
 	"""
-	pass
+	raw_log = server_log.split()
+	host = raw_log[0]
+	timestamp = re.search(r"\[(.*)\]",server_log).group()
+	request = re.search(r"\"(.*)\"", server_log).group()
+	resource = request.split()[1]
+	response_code = raw_log[-2]
+	if raw_log[-1] == '-':
+		bytes = 0
+	else:
+		bytes = int(raw_log[-1])
+	print server_log
+	print host, timestamp, request, resource, response_code, bytes
 
 def analyze_server_logs():
 	""" Main function from which the execution begins for
@@ -50,7 +63,9 @@ def analyze_server_logs():
 	resources_list = Counter()
 	with open(argv[1],'r') as input_file:		
 		for server_log in input_file:
-			pass
+			print server_log
+			decompose_server_log(server_log)
+			break
 			
 if __name__ == "__main__":
 	analyze_server_logs()
