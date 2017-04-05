@@ -68,7 +68,21 @@ def ts_to_str(ts):
 	str_ts = ts.strftime(format)
 	return ''.join([str_ts," -0400"])
 
-def find_busiest_windows(timestamp, timestamps, 
+def sort_heap(top_k_heap, order = "desc"):
+	""" Sorts the heap in given order
+	Args:
+		top_k_heap (heapq): Heap to be sorted
+		order (str): Sorting order (default "desc")
+	Returns:
+		list 
+	"""
+	sorted_heap = [heapq.heappop(top_k_heap) for i in xrange(len(top_k_heap))]
+	if order == "desc":
+		return sorted_heap[::-1]
+	else:
+		return sorted_heap
+
+def find_busiest_windows(timestamp, timestamps,
 						top_k_busiest_windows, curr_win_length, k=10):
 	""" Finds busiest k 60 minute window.
 	Args:
@@ -77,7 +91,7 @@ def find_busiest_windows(timestamp, timestamps,
 		top_k_busiest_windows (list): Current top k busiest windows
 		k (int): Top K value (default 10)
 	Returns:
-		tuple: (Current 60 min window, current top k businest windows)
+		tuple: (deque, heapq, int)
 	"""
 	WINDOW_SIZE = 60 #in minutes
 	delta = timedelta(minutes=WINDOW_SIZE)
@@ -107,8 +121,11 @@ def blocked(host, timestamp, resource, response_code,
 		timestamp (datetime): Timestamp of the log entry
 		resource (str): Requested resource
 		response_code (str): HTTP response code 
+		flagged_hosts_list (dict): Hosts with failed attempt in 
+									20 second window
+		blocked_hosts_list (dict): Hosts with 5 minutes waiting period				
 	Returns:
-		tuple: (Boolean, Dictionary)
+		tuple: (Boolean, Dictionary, Dictionary)
 	"""
 	blocked_status = False
 
@@ -177,6 +194,11 @@ def analyze_server_logs():
 	""" Main function from which the execution begins for
 		the implementation of all the features.
 	"""
+	feature1_output = "../log_output/hosts.txt"
+	feature2_output = "../log_output/resources.txt"
+	feature3_output = "../log_output/hours.txt"
+	feature4_output = "../log_output/blocked.txt"		
+
 	host_list = Counter()
 	top_k_host = []
 
@@ -193,7 +215,7 @@ def analyze_server_logs():
 	no_of_logs = 0
 	blocked_log = 0
 
-	with open(argv[1],'r') as input_file:		
+	with open(argv[1],"r") as input_file:		
 		for server_log in iter(input_file.readline,''):
 			no_of_logs += 1
 			decomposed_log = decompose_server_log(server_log)
@@ -231,7 +253,7 @@ def analyze_server_logs():
 			if blocked_status:
 				blocked_log += 1
 				blocked_attempts.append(server_log)
-			if no_of_logs%100000 == 0:
+			if no_of_logs % 100000 == 0:
 				print no_of_logs," logs processed"
 	
 	if curr_win_length >= top_k_busiest_windows[0][0]:
@@ -255,11 +277,24 @@ def analyze_server_logs():
 		if top_k_busiest_windows[0][1] == ts_to_str(datetime(1900, 01, 01, 00, 00, 00)):
 			heapq.heappop(top_k_busiest_windows)
 
+	with open(feature1_output,"w") as f1_file:
+		top_k_host = sort_heap(top_k_host)
+		for pair in top_k_host:
+			f1_file.write(''.join([pair[1],',',str(pair[0]),"\n"]))
 
-	print blocked_log
-	print top_k_host
-	print top_k_resources
-	print top_k_busiest_windows			
+	with open(feature2_output,"w") as f2_file:
+		top_k_resources = sort_heap(top_k_resources)
+		for pair in top_k_resources:
+			f2_file.write(''.join([pair[1],"\n"]))
+
+	with open(feature3_output,"w") as f3_file:
+		top_k_busiest_windows = sort_heap(top_k_busiest_windows)
+		for pair in top_k_busiest_windows:
+			f3_file.write(''.join([pair[1],',',str(pair[0]),"\n"]))
+
+	with open(feature4_output,"w") as f4_file:
+		for blocked_log in blocked_attempts:
+			f3_file.write(''.join([blocked_log,"\n"]))
 			
 if __name__ == "__main__":
 	analyze_server_logs()
