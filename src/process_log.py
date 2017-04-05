@@ -79,21 +79,6 @@ def find_busiest_windows(timestamp, timestamps,
 	Returns:
 		tuple: (Current 60 min window, current top k businest windows)
 	"""
-	# WINDOW_SIZE = 60 #in minutes
-	# delta = timedelta(minutes=WINDOW_SIZE)
-	# timestamps.append(timestamp)
-
-	# if (timestamp - timestamps[0]) >= delta:
-	# 	str_ts = ts_to_str(timestamps.popleft())
-	# 	top_k_busiest_windows = top_k_elements({str_ts: curr_win_length},
-	# 								top_k_busiest_windows) 
-	# 	while (timestamp - timestamps[0]) >= delta:
-	# 		str_ts = ts_to_str(timestamps.popleft())
-	# 		curr_win_length -= 1
-	# 		top_k_busiest_windows = top_k_elements({str_ts: curr_win_length},
-	# 									top_k_busiest_windows) 
-	# else:
-	# 	curr_win_length += 1
 	WINDOW_SIZE = 60 #in minutes
 	delta = timedelta(minutes=WINDOW_SIZE)
 	timestamps.append(timestamp)
@@ -185,7 +170,6 @@ def decompose_server_log(server_log):
 			bytes = int(raw_log[-1])
 	except IndexError:
 		return None
-	#print timestamp
 	return (host, str_timestamp, timestamp, request_type, resource, 
 			response_code, bytes)
 
@@ -194,15 +178,18 @@ def analyze_server_logs():
 		the implementation of all the features.
 	"""
 	host_list = Counter()
+	top_k_host = []
+
+	resources_list = Counter()
+	top_k_resources = []
+
 	timestamps = deque([datetime(1900, 01, 01, 00, 00, 00)])
 	curr_win_length = len(timestamps)
-	resources_list = Counter()
+	top_k_busiest_windows = []
+
 	flagged_hosts_list = {}
 	blocked_hosts_list = {}
 	blocked_attempts = []
-	top_k_host = []
-	top_k_resources = []
-	top_k_busiest_windows = []
 	no_of_logs = 0
 	blocked_log = 0
 
@@ -247,11 +234,9 @@ def analyze_server_logs():
 			if no_of_logs%100000 == 0:
 				print no_of_logs," logs processed"
 	
-	print timestamps
 	if curr_win_length >= top_k_busiest_windows[0][0]:
 		k = 1
 		for i in xrange(curr_win_length-1):
-			print i
 			c = k - i
 			if timestamps[i] != timestamps[i-1]:
 				for j in xrange(k,curr_win_length):
@@ -264,19 +249,17 @@ def analyze_server_logs():
 									{ts_to_str(timestamps[i]): c},
 									top_k_busiest_windows)
 				k = j
-			print timestamps[i], c
 		top_k_busiest_windows = top_k_elements(
 									{ts_to_str(timestamps[i]): 1},
 									top_k_busiest_windows)
 		if top_k_busiest_windows[0][1] == ts_to_str(datetime(1900, 01, 01, 00, 00, 00)):
 			heapq.heappop(top_k_busiest_windows)
 
+
 	print blocked_log
 	print top_k_host
 	print top_k_resources
-	print top_k_busiest_windows
-
-			
+	print top_k_busiest_windows			
 			
 if __name__ == "__main__":
 	analyze_server_logs()
