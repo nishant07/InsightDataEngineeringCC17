@@ -294,7 +294,7 @@ def analyze_server_logs():
 
 	with open(feature4_output,"w") as f4_file:
 		for blocked_log in blocked_attempts:
-			f3_file.write(''.join([blocked_log,"\n"]))
+			f4_file.write(blocked_log)
 			
 if __name__ == "__main__":
 	analyze_server_logs()
