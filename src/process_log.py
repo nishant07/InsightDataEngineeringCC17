@@ -279,21 +279,21 @@ def analyze_server_logs():
 
 	with open(feature1_output,"w") as f1_file:
 		top_k_host = sort_heap(top_k_host)
-		for pair in top_k_host:
+		for pair in iter(top_k_host):
 			f1_file.write(''.join([pair[1],',',str(pair[0]),"\n"]))
 
 	with open(feature2_output,"w") as f2_file:
 		top_k_resources = sort_heap(top_k_resources)
-		for pair in top_k_resources:
+		for pair in iter(top_k_resources):
 			f2_file.write(''.join([pair[1],"\n"]))
 
 	with open(feature3_output,"w") as f3_file:
 		top_k_busiest_windows = sort_heap(top_k_busiest_windows)
-		for pair in top_k_busiest_windows:
+		for pair in iter(top_k_busiest_windows):
 			f3_file.write(''.join([pair[1],',',str(pair[0]),"\n"]))
 
 	with open(feature4_output,"w") as f4_file:
-		for blocked_log in blocked_attempts:
+		for blocked_log in iter(blocked_attempts):
 			f4_file.write(blocked_log)
 			
 if __name__ == "__main__":
