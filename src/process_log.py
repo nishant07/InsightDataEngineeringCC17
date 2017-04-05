@@ -130,12 +130,9 @@ def blocked(host, timestamp, resource, response_code,
 	if host in blocked_hosts_list:
 		if timedelta(minutes=5) >= timestamp - flagged_hosts_list[host][-1]:
 			blocked_status = True
-#			return (True, flagged_hosts_list, blocked_hosts_list)
 		else:
 			del flagged_hosts_list[host]
 			del blocked_hosts_list[host]
-			#return (False, flagged_hosts_list, blocked_hosts_list)
-
 	if host not in flagged_hosts_list:
 		if resource == "/login" and response_code == "401":
 			flagged_hosts_list[host] = [timestamp]
@@ -247,11 +244,32 @@ def analyze_server_logs():
 			if blocked_status:
 				blocked_log += 1
 				blocked_attempts.append(server_log)
-			if no_of_logs%10000 == 0:
+			if no_of_logs%100000 == 0:
 				print no_of_logs," logs processed"
 	
-	if curr_win_length >= top_k_busiest_windows[0] - 1:
-		pass
+	print timestamps
+	if curr_win_length >= top_k_busiest_windows[0][0]:
+		k = 1
+		for i in xrange(curr_win_length-1):
+			print i
+			c = k - i
+			if timestamps[i] != timestamps[i-1]:
+				for j in xrange(k,curr_win_length):
+					if timestamps[j] - timestamps[i] < timedelta(minutes=60):
+						c += 1
+					else:
+						break
+				
+				top_k_busiest_windows = top_k_elements(
+									{ts_to_str(timestamps[i]): c},
+									top_k_busiest_windows)
+				k = j
+			print timestamps[i], c
+		top_k_busiest_windows = top_k_elements(
+									{ts_to_str(timestamps[i]): 1},
+									top_k_busiest_windows)
+		if top_k_busiest_windows[0][1] == ts_to_str(datetime(1900, 01, 01, 00, 00, 00)):
+			heapq.heappop(top_k_busiest_windows)
 
 	print blocked_log
 	print top_k_host
