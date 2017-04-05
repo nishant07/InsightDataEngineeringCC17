@@ -1,7 +1,6 @@
 import re
 import heapq
 from sys import argv
-#from heapq import *
 from collections import Counter, deque
 from datetime import datetime, timedelta
 
@@ -19,13 +18,11 @@ def top_k_elements(element_dict, top_k=[], k=10):
 			list: Return a list with k elements
 
 	"""
-	#print element_dict
 	element = element_dict.items() 
 	element_key, element_value = element[0][0], element[0][1]
 	
 	if top_k:
 		element_keys = map(lambda k: k[1], top_k)
-		#print element_keys
 
 	if top_k and element_key in element_keys:
 		if element_value > top_k[element_keys.index(element_key)][0]:
@@ -82,12 +79,29 @@ def find_busiest_windows(timestamp, timestamps,
 	Returns:
 		tuple: (Current 60 min window, current top k businest windows)
 	"""
+	# WINDOW_SIZE = 60 #in minutes
+	# delta = timedelta(minutes=WINDOW_SIZE)
+	# timestamps.append(timestamp)
+
+	# if (timestamp - timestamps[0]) >= delta:
+	# 	str_ts = ts_to_str(timestamps.popleft())
+	# 	top_k_busiest_windows = top_k_elements({str_ts: curr_win_length},
+	# 								top_k_busiest_windows) 
+	# 	while (timestamp - timestamps[0]) >= delta:
+	# 		str_ts = ts_to_str(timestamps.popleft())
+	# 		curr_win_length -= 1
+	# 		top_k_busiest_windows = top_k_elements({str_ts: curr_win_length},
+	# 									top_k_busiest_windows) 
+	# else:
+	# 	curr_win_length += 1
 	WINDOW_SIZE = 60 #in minutes
 	delta = timedelta(minutes=WINDOW_SIZE)
 	timestamps.append(timestamp)
+	curr_win_length += 1
 
 	if (timestamp - timestamps[0]) >= delta:
 		str_ts = ts_to_str(timestamps.popleft())
+		curr_win_length -= 1
 		top_k_busiest_windows = top_k_elements({str_ts: curr_win_length},
 									top_k_busiest_windows) 
 		while (timestamp - timestamps[0]) >= delta:
@@ -95,27 +109,26 @@ def find_busiest_windows(timestamp, timestamps,
 			curr_win_length -= 1
 			top_k_busiest_windows = top_k_elements({str_ts: curr_win_length},
 										top_k_busiest_windows) 
-	else:
-		curr_win_length += 1
+
 	return (timestamps, top_k_busiest_windows, curr_win_length)
 
-def blocked(host, timestamp, request_type, resource, 
-			response_code, flagged_hosts_list, blocked_hosts_list):
+def blocked(host, timestamp, resource, response_code, 
+				flagged_hosts_list, blocked_hosts_list):
 	""" Checks if the entry should be blocked and returns 
 		blocked hosts list
 
 	Args:
 		host (str): host/IP address
 		timestamp (datetime): Timestamp of the log entry
-		request_type (str): HTTP request type
 		resource (str): Requested resource
 		response_code (str): HTTP response code 
 	Returns:
 		tuple: (Boolean, Dictionary)
 	"""
 	blocked_status = False
+
 	if host in blocked_hosts_list:
-		if flagged_hosts_list[host][-1] >= timestamp - timedelta(minutes=5):
+		if timedelta(minutes=5) >= timestamp - flagged_hosts_list[host][-1]:
 			blocked_status = True
 #			return (True, flagged_hosts_list, blocked_hosts_list)
 		else:
@@ -127,7 +140,7 @@ def blocked(host, timestamp, request_type, resource,
 		if resource == "/login" and response_code == "401":
 			flagged_hosts_list[host] = [timestamp]
 	else:
-		if flagged_hosts_list[host][-1] < timestamp - timedelta(seconds=20):
+		if timedelta(seconds=20) < timestamp - flagged_hosts_list[host][-1]:
 			if resource == "/login" and response_code == "401":
 				flagged_hosts_list[host] = [timestamp]
 		else:
@@ -139,7 +152,6 @@ def blocked(host, timestamp, request_type, resource,
 						del flagged_hosts_list[host]
 					else:
 						pass
-
 			elif len(flagged_hosts_list[host]) == 2:
 				if resource == "/login":
 					if response_code == "401":
@@ -149,12 +161,13 @@ def blocked(host, timestamp, request_type, resource,
 						del flagged_hosts_list[host]
 					else:
 						pass
-
+			else:
+				pass
 	return (blocked_status, flagged_hosts_list, blocked_hosts_list)
+
 def decompose_server_log(server_log):
 	""" Decomposes each log into host, timestamp, resource, 
-		HTTP reply code, bytes.
-	
+		HTTP reply code, bytes.	
 	Args:
 		server_log (str): A server log
 	Returns:
@@ -174,8 +187,7 @@ def decompose_server_log(server_log):
 		else:
 			bytes = int(raw_log[-1])
 	except IndexError:
-		print raw_log
-		return ('dummy_host','dummy_ts','SOS',-1)
+		return None
 	#print timestamp
 	return (host, str_timestamp, timestamp, request_type, resource, 
 			response_code, bytes)
@@ -196,12 +208,16 @@ def analyze_server_logs():
 	top_k_busiest_windows = []
 	no_of_logs = 0
 	blocked_log = 0
+
 	with open(argv[1],'r') as input_file:		
 		for server_log in iter(input_file.readline,''):
 			no_of_logs += 1
 			decomposed_log = decompose_server_log(server_log)
-			#print decomposed_log
-			try:
+			if not decomposed_log:
+				print server_log
+				print "Unable to parse above log, Error in format"
+				continue
+			else:
 				host = decomposed_log[0]
 				str_timestamp = decomposed_log[1]
 				timestamp = decomposed_log[2]
@@ -209,35 +225,35 @@ def analyze_server_logs():
 				resource = decomposed_log[4]
 				response_code = decomposed_log[5]
 				bytes = decomposed_log[6]
-			except IndexError:
-				print "Host,resource,bytes", server_log
-				continue
-			#break
-			host_list[host] += 1
-			resources_list[resource] = resources_list.get(resource,0) + bytes
 
+			host_list[host] += 1
 			top_k_host = top_k_elements({host: host_list[host]}, top_k_host)
+
+			resources_list[resource] = resources_list.get(resource,0) + bytes			
 			top_k_resources = top_k_elements({resource: resources_list[resource]}, 
 												top_k_resources)
+			
 			timestamps, top_k_busiest_windows, \
 			 curr_win_length = find_busiest_windows(timestamp, timestamps,
 													top_k_busiest_windows,
 													curr_win_length)	
 
 			blocked_status, flagged_hosts_list, \
-			 blocked_hosts_list = blocked(host, timestamp, request_type, 
+			 blocked_hosts_list = blocked(host, timestamp, 
 			 								resource, response_code, 
 			 								flagged_hosts_list, 
 											blocked_hosts_list)
 
 			if blocked_status:
-				#print server_log
 				blocked_log += 1
 				blocked_attempts.append(server_log)
 			if no_of_logs%10000 == 0:
-				print no_of_logs," processed"
+				print no_of_logs," logs processed"
+	
+	if curr_win_length >= top_k_busiest_windows[0] - 1:
+		pass
+
 	print blocked_log
-	#print timestamps
 	print top_k_host
 	print top_k_resources
 	print top_k_busiest_windows
