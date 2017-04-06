@@ -29,11 +29,13 @@ It's critical that these features don't take too long to run. For example, if it
 This dataset is inspired by real NASA web traffic, which is very similar to server logs from e-commerce and other sites. Monitoring web traffic and providing these analytics is a real business need, but it’s not the only thing you can do with the data. Feel free to implement additional features that you think might be useful.
 
 ## Details of Implementation
-With this coding challenge, you should demonstrate a strong understanding of computer science fundamentals. We won't be wowed by your knowledge of various available software libraries, but will be impressed by your ability to pick and use the best data structures and algorithms for the job.
+I have implemented the code in such a manner that the data is trated as streaming data. So I am processing each log one by one updating the asked feature values accodingly. Hence, if someone wants to check output of the features in real-time or build a real-time dashboard showing these features' values, it's vary easy to build from my model of program. 
 
-We're looking for clean, well-thought-out code that correctly implements the desired features in an optimized way and highlights your ability to write production-quality code.
+With this approach, I am also able to save a lot of memory since only minimal data will be in memory at a moment. And this gives an opportunity to scale up the analysis ability of this code. Because if the log size is too large to fit in local system, we can not perform analysis after reading and storing details of all the logs and then perform analysis.  
 
-We also want to see how you use your programming skills to solve business problems. At a minimum, you should implement the four required features, but feel free to expand upon this challenge or add other features you think would prevent fraud and further business goals. Be sure to document these add-ons so we know to look for them.
+However, trade-off of this approach is that it makes too many function calls, too many arguments passing which is making the overall analysis slow. But it is speedy enough to make real-time decision like feature 4 if breach is found.
+
+So this approach is well-suitable for real world scenario even if the overall execution time might be slow compared to other solutions.
 
 ### Feature 1 
 List in descending order the top 10 most active hosts/IP addresses that have accessed the site.
@@ -46,6 +48,9 @@ e.g., `hosts.txt`:
     another.example.net,800000
     31.41.59.26,600000
     …
+  
+#### Solving feature 1:  
+I am building a HashMap - Python Dictionary to store the count the number of requests from each host. I am updating the count whenever new log arrives and updating the top hosts accordingly. To find the host from log, I am using split method instead of using regular expressions, since regex are expensive and it's easy to extract host name from server log in our case. I am using heap to store and mantain top K hosts. This gives an advantage in running time for finding top K elements from performing sorting and then extracting top K elements. This is also a perfect approach if the data is streaming data. To resolve equalities, I am following lexical order.
 
 
 ### Feature 2 
