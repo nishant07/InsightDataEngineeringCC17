@@ -122,6 +122,22 @@ Note that this feature should not impact the other features in this challenge. F
 #### Solving feature 4:
 This was relatively easy to implement. I am maintaining two HashMaps, one to maintain entries of host names which are currently in blocked state after failing 3 consecutive login attempts and other to maintain hostnames which are flagged and observed as they made failed login attempt. This flag remains intact for 20 seconds. For each server log, I am checking if the host is in blocked category. If yes, I am logging all the upcoming requests from that hostname for 5 minutes since the last failed login attempt. If it isn't in blocked list, I check for flag status, and make updates to flag list and decide if the latest server log entry should be logged or not. This feature is implemented mainly by `blocked` function in the `process_log.py`.
 
+### Feature 5
+List in daily hits on the website in ascending order of the date
+
+Write to a file named `dailyhits.txt`, the count of daily total hits to the website in the ascending order of the date. This feature helps to create a time-series, which can be analyzed when the load to the server is highest, lowest etc. Based on this data, we can make decision for scaling up or down of the hosting server 
+
+e.g., `dailyhits.txt`:
+
+    01/Jul/1995,10000
+    02/Jul/1995,2000
+    03/Jul/1995:450544
+    04/Jul/1995:6562
+    …
+
+Solving feature 5:
+I am using the same approach as used in feature 1,2,3, that use a `Counter` (subclass of Python dictionary) to store the count. And at the end I am printing the solution in ascending order of the dates.
+
 ### Additional Features
 
 Feel free to implement additional features that might be useful to derive further metrics or prevent harmful activity. These features will be considered as bonus while evaluating your submission. If you choose to add extras please document them in your README and make sure that they don't interfere with the above four (e.g. don't alter the output of the four core features).
@@ -155,21 +171,6 @@ e.g., `log.txt`
     
 In the above example, the 2nd line shows a failed login (HTTP reply code of 401) followed by a successful login (HTTP reply code of 200) two seconds later from the same IP address.
 
-### Feature 5
-List in daily hits on the website in ascending order of the date
-
-Write to a file named `dailyhits.txt`, the count of daily total hits to the website in the ascending order of the date. This feature helps to create a time-series, which can be analyzed when the load to the server is highest, lowest etc. Based on this data, we can make decision for scaling up or down of the hosting server 
-
-e.g., `dailyhits.txt`:
-
-    01/Jul/1995,10000
-    02/Jul/1995,2000
-    03/Jul/1995:450544
-    04/Jul/1995:6562
-    …
-
-Solving feature 5:
-I am using the same approach as used in feature 1,2,3, that use a `Counter` (subclass of Python dictionary) to store the count. And at the end I am printing the solution in ascending order of the dates.
 
 ## Repo directory structure
 
