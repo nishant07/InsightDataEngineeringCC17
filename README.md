@@ -23,7 +23,6 @@ List the top 10 busiest (or most frequently visited) 60-minute periods
 ### Feature 4: 
 Detect patterns of three failed login attempts from the same IP address over 20 seconds so that all further attempts to the site can be blocked for 5 minutes. Log those possible security breaches.
 
-
 ### Other considerations and optional features
 It's critical that these features don't take too long to run. For example, if it took too long to detect three failed login attempts, further traffic from the same IP address couldn’t be blocked immediately, and that would present a security breach.
 This dataset is inspired by real NASA web traffic, which is very similar to server logs from e-commerce and other sites. Monitoring web traffic and providing these analytics is a real business need, but it’s not the only thing you can do with the data. Feel free to implement additional features that you think might be useful.
@@ -33,7 +32,7 @@ I have implemented the code in such a manner that the data is trated as streamin
 
 With this approach, I am also able to save a lot of memory since only minimal data will be in memory at a moment. And this gives an opportunity to scale up the analysis ability of this code. Because if the log size is too large to fit in local system, we can not perform analysis after reading and storing details of all the logs and then perform analysis.  
 
-However, trade-off of this approach is that it makes too many function calls, too many arguments passing which is making the overall analysis slow. But it is speedy enough to make real-time decision like feature 4 if breach is found.
+However, trade-off of this approach is that it makes too many function calls, too many arguments passing which is making the overall analysis slow. But it is speedy enough to make real-time decision like feature 4 if breach is found. Using HashMaps and Heaps have given me a huge advantage in terms of running time. Since I have considered this data as a streaming data, I had to build my own version of Python default `heapq.nlarget()` called  `top_k_elements()`.
 
 So this approach is well-suitable for real world scenario even if the overall execution time might be slow compared to other solutions.
 
@@ -50,8 +49,7 @@ e.g., `hosts.txt`:
     …
   
 #### Solving feature 1:  
-I am building a HashMap - Python Dictionary to store the count the number of requests from each host. I am updating the count whenever new log arrives and updating the top hosts accordingly. To find the host from log, I am using split method instead of using regular expressions, since regex are expensive and it's easy to extract host name from server log in our case. I am using heap to store and mantain top K hosts. This gives an advantage in running time for finding top K elements from performing sorting and then extracting top K elements. This is also a perfect approach if the data is streaming data. To resolve equalities, I am following lexical order.
-
+I am building a HashMap - Python Dictionary to store the count the number of requests from each host. I am updating the count whenever new log arrives and updating the top hosts accordingly. To find the host from log, I am using split method instead of using regular expressions, since regex are expensive and it's easy to extract host name from server log in our case. I am using heap to store and mantain top K hosts. This gives an advantage in running time for finding top K elements from performing sorting and then extracting top K elements. This is also a perfect approach if the data is streaming data. To resolve ties, I am following lexical order. This feature is implemented mainly using `top_k_elements`.
 
 ### Feature 2 
 Identify the top 10 resources on the site that consume the most bandwidth. Bandwidth consumption can be extrapolated from bytes sent over the network and the frequency by which they were accessed.
@@ -66,6 +64,8 @@ e.g., `resources.txt`:
     /shuttle/countdown/count.html
     …
 
+#### Solving feature 2:
+Similar to feature 1, I am maintaining the count of accessed resources in HashMap, and updating and maintaining top K resources using Heap. The difference here is in extracting the resource. I am using regex to find the accessed resource since it is highly error-prone to use any other method. For this, I am extracting the whole HTTP request using regex and then extracting resource from split method of the string. If the request is not in proper format, I am printing it out in the console and discaring that whole server log for any analysis. To resolve ties, I am following lexical order. This feature is implemented mainly using `top_k_elements`.
 
 ### Feature 3 
 List in descending order the site’s 10 busiest (i.e. most frequently visited) 60-minute period.
@@ -81,6 +81,13 @@ e.g., `hours.txt`:
     …
 
 A 60-minute window can be any 60 minute long time period, windows don't have to start at a time when an event occurs.
+
+#### Solving feature 3:  
+This was the most comlicated feature to implement as there are many assumption to make and multiple answers are possible. I emailed to administrative team of coding challenge and based on their reply, I implemented my approach. 
+
+Assumption made: 1) Windows can overlap 2) Starting time of the window will also be a strating time of some event, if I don't assume this, there can be multiple correct answer possible for thie feature. 
+
+Implementation: I am extracting the timestamp using regex and converting it to datetime object of python using strptime method. By profiling the code, I can see that these tasks are taking the maximum time to execute compared to other tasks, but at this moment, I am going with these safe approaches to perform extraction and conversion of timestamp. After extracting timestamp, I am building a HashMap of each unique timestamp and calculating the number of server logs in 60 minute time windows which starts from that timestamp. To find the number of logs in the windows, I am using `deque` collection of python, since it's optimized to run sliding window of 60 minute to find the numbers of logs. Whenever a new log comes, I am checking the current entries in this 60 minute sliding window deque, and removing the entries from left which don't belong to 60 minute window ending at a time when the new log arrived. This gives me linear running time to find the number of logs in each 60 minute window and then I am using Heap to find top K busiest 60 minute time window, just like feature 2 and 3. This feature is mainly implemented through function `find_busiest_windows`.
 
 ### Feature 4 
 Your final task is to detect patterns of three consecutive failed login attempts over 20 seconds in order to block all further attempts to reach the site from the same IP address for the next 5 minutes. Each attempt that would have been blocked should be written to a log file named `blocked.txt`.
