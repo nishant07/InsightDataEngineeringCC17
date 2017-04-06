@@ -194,10 +194,10 @@ def analyze_server_logs():
 	""" Main function from which the execution begins for
 		the implementation of all the features.
 	"""
-	feature1_output = "../log_output/hosts.txt"
-	feature2_output = "../log_output/resources.txt"
-	feature3_output = "../log_output/hours.txt"
-	feature4_output = "../log_output/blocked.txt"		
+	feature1_output = argv[1] # "../log_output/hosts.txt"
+	feature2_output = argv[2] # "../log_output/resources.txt"
+	feature3_output = argv[3] # "../log_output/hours.txt"
+	feature4_output = argv[4] #"../log_output/blocked.txt"		
 
 	host_list = Counter()
 	top_k_host = []
