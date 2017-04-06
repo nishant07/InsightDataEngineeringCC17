@@ -33,7 +33,7 @@ def top_k_elements(element_dict, top_k=[], k=10):
 			heapq.heappush(top_k, (element_value, element_key))
 		else:
 			if top_k[0][0] == element_value:
-				if top_k[0][1] > element_key:
+				if top_k[0][1] < element_key:
 					heapq.heapreplace(top_k, (element_value, element_key))
 			elif top_k[0] < (element_value, element_key):
 				heapq.heapreplace(top_k, (element_value, element_key))
@@ -127,6 +127,7 @@ def blocked(host, timestamp, resource, response_code,
 	Returns:
 		tuple: (Boolean, Dictionary, Dictionary)
 	"""
+	NO_OF_ALLOWED_ATTEMPTS = 3
 	blocked_status = False
 
 	if host in blocked_hosts_list:
@@ -143,25 +144,26 @@ def blocked(host, timestamp, resource, response_code,
 			if resource == "/login" and response_code == "401":
 				flagged_hosts_list[host] = [timestamp]
 		else:
-			if len(flagged_hosts_list[host]) == 1:
+			while len(flagged_hosts_list[host]) <= NO_OF_ALLOWED_ATTEMPTS - 2:
 				if resource == "/login":
 					if response_code == "401":
 						flagged_hosts_list[host].append(timestamp)
 					elif response_code == "200":
 						del flagged_hosts_list[host]
+						break
 					else:
 						pass
-			elif len(flagged_hosts_list[host]) == 2:
-				if resource == "/login":
-					if response_code == "401":
-						flagged_hosts_list[host].append(timestamp)
-						blocked_hosts_list[host] = blocked_hosts_list.get(host, 0) + 1
-					elif response_code == "200":
-						del flagged_hosts_list[host]
-					else:
-						pass
-			else:
-				pass
+			if host in flagged_hosts_list:
+				if len(flagged_hosts_list[host]) == NO_OF_ALLOWED_ATTEMPTS - 1:
+					if resource == "/login":
+						if response_code == "401":
+							flagged_hosts_list[host].append(timestamp)
+							blocked_hosts_list[host] = blocked_hosts_list.get(host, 0) + 1
+						elif response_code == "200":
+							del flagged_hosts_list[host]
+						else:
+							pass
+
 	return (blocked_status, flagged_hosts_list, blocked_hosts_list)
 
 def decompose_server_log(server_log):

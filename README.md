@@ -49,7 +49,7 @@ e.g., `hosts.txt`:
     …
   
 #### Solving feature 1:  
-I am building a HashMap - Python Dictionary to store the count the number of requests from each host. I am updating the count whenever new log arrives and updating the top hosts accordingly. To find the host from log, I am using split method instead of using regular expressions, since regex are expensive and it's easy to extract host name from server log in our case. I am using heap to store and mantain top K hosts. This gives an advantage in running time for finding top K elements from performing sorting and then extracting top K elements. This is also a perfect approach if the data is streaming data. To resolve ties, I am following lexical order. This feature is implemented mainly using `top_k_elements`.
+I am building a HashMap - Python Dictionary to store the count the number of requests from each host. I am updating the count whenever new log arrives and updating the top hosts accordingly. To find the host from log, I am using split method instead of using regular expressions, since regex are expensive and it's easy to extract host name from server log in our case. I am using heap to store and mantain top K hosts. This gives an advantage in running time for finding top K elements from performing sorting and then extracting top K elements. This is also a perfect approach if the data is streaming data. To resolve ties, I am following lexical order. This feature is implemented mainly using `top_k_elements` in the `process_log.py`.
 
 ### Feature 2 
 Identify the top 10 resources on the site that consume the most bandwidth. Bandwidth consumption can be extrapolated from bytes sent over the network and the frequency by which they were accessed.
@@ -65,7 +65,7 @@ e.g., `resources.txt`:
     …
 
 #### Solving feature 2:
-Similar to feature 1, I am maintaining the count of accessed resources in HashMap, and updating and maintaining top K resources using Heap. The difference here is in extracting the resource. I am using regex to find the accessed resource since it is highly error-prone to use any other method. For this, I am extracting the whole HTTP request using regex and then extracting resource from split method of the string. If the request is not in proper format, I am printing it out in the console and discaring that whole server log for any analysis. To resolve ties, I am following lexical order. This feature is implemented mainly using `top_k_elements`.
+Similar to feature 1, I am maintaining the count of accessed resources in HashMap, and updating and maintaining top K resources using Heap. The difference here is in extracting the resource. I am using regex to find the accessed resource since it is highly error-prone to use any other method. For this, I am extracting the whole HTTP request using regex and then extracting resource from split method of the string. If the request is not in proper format, I am printing it out in the console and discaring that whole server log for any analysis. To resolve ties, I am following lexical order. This feature is implemented mainly using `top_k_elements` in the `process_log.py`.
 
 ### Feature 3 
 List in descending order the site’s 10 busiest (i.e. most frequently visited) 60-minute period.
@@ -87,7 +87,7 @@ This was the most comlicated feature to implement as there are many assumption t
 
 Assumption made: 1) Windows can overlap 2) Starting time of the window will also be a strating time of some event, if I don't assume this, there can be multiple correct answer possible for thie feature. 
 
-Implementation: I am extracting the timestamp using regex and converting it to datetime object of python using strptime method. By profiling the code, I can see that these tasks are taking the maximum time to execute compared to other tasks, but at this moment, I am going with these safe approaches to perform extraction and conversion of timestamp. After extracting timestamp, I am building a HashMap of each unique timestamp and calculating the number of server logs in 60 minute time windows which starts from that timestamp. To find the number of logs in the windows, I am using `deque` collection of python, since it's optimized to run sliding window of 60 minute to find the numbers of logs. Whenever a new log comes, I am checking the current entries in this 60 minute sliding window deque, and removing the entries from left which don't belong to 60 minute window ending at a time when the new log arrived. This gives me linear running time to find the number of logs in each 60 minute window and then I am using Heap to find top K busiest 60 minute time window, just like feature 2 and 3. This feature is mainly implemented through function `find_busiest_windows`.
+Implementation: I am extracting the timestamp using regex and converting it to datetime object of python using strptime method. By profiling the code, I can see that these tasks are taking the maximum time to execute compared to other tasks, but at this moment, I am going with these safe approaches to perform extraction and conversion of timestamp. After extracting timestamp, I am building a HashMap of each unique timestamp and calculating the number of server logs in 60 minute time windows which starts from that timestamp. To find the number of logs in the windows, I am using `deque` collection of python, since it's optimized to run sliding window of 60 minute to find the numbers of logs. Whenever a new log comes, I am checking the current entries in this 60 minute sliding window deque, and removing the entries from left which don't belong to 60 minute window ending at a time when the new log arrived. This gives me linear running time to find the number of logs in each 60 minute window and then I am using Heap to find top K busiest 60 minute time window, just like feature 2 and 3. This feature is mainly implemented through function `find_busiest_windows` in the `process_log.py`.
 
 ### Feature 4 
 Your final task is to detect patterns of three consecutive failed login attempts over 20 seconds in order to block all further attempts to reach the site from the same IP address for the next 5 minutes. Each attempt that would have been blocked should be written to a log file named `blocked.txt`.
@@ -110,11 +110,12 @@ e.g., `blocked.txt`
 
 The following illustration may help you understand how this feature might work, and when three failed login attempts would trigger 5 minutes of blocking:
 
-
 ![Feature 4 illustration](images/feature4.png)
 
-
 Note that this feature should not impact the other features in this challenge. For instance, any requests that end up in the `blocked.txt` file should be counted toward the most active IP host calculation, bandwidth consumption and busiest 60-minute period.
+
+#### Solving feature 4:
+This was relatively easy to implement. I am maintaining two HashMaps, one to maintain entries of host names which are currently in blocked state after failing 3 consecutive login attempts and other to maintain hostnames which are flagged and observed as they made failed login attempt. This flag remains intact for 20 seconds. For each server log, I am checking if the host is in blocked category. If yes, I am logging all the upcoming requests from that hostname for 5 minutes since the last failed login attempt. If it isn't in blocked list, I check for flag status, and make updates to flag list and decide if the latest server log entry should be logged or not. This feature is implemented mainly by `blocked` function in the `process_log.py`.
 
 ### Additional Features
 
