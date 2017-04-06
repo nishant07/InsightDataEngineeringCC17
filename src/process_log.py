@@ -50,9 +50,17 @@ def str_to_ts(str_ts):
 	Returns:
 		datetime : Timestamp in form of Python datetime object
 	"""
+	MONTHS = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+				'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
 	format = "%d/%b/%Y:%H:%M:%S"
 	str_ts = str_ts.split()[0]
-	ts = datetime.strptime(str_ts, format)
+	DD = int(str_ts[:2])
+	MON = MONTHS[str_ts[3:6]]
+	YYYY = int(str_ts[7:11])
+	HH = int(str_ts[12:14])
+	MM = int(str_ts[15:17])
+	SS = int(str_ts[18:20])
+	ts = datetime(YYYY, MON, DD, HH, MM, SS)
 	return ts
 
 def ts_to_str(ts):
@@ -236,76 +244,86 @@ def analyze_server_logs():
 				response_code = decomposed_log[5]
 				bytes = decomposed_log[6]
 
-			host_list[host] += 1
-			top_k_host = top_k_elements({host: host_list[host]}, top_k_host)
+			if feature1_output != "*":
+				host_list[host] += 1
+				top_k_host = top_k_elements({host: host_list[host]}, top_k_host)
 
-			resources_list[resource] = resources_list.get(resource,0) + bytes			
-			top_k_resources = top_k_elements({resource: resources_list[resource]}, 
-												top_k_resources)
+			if feature2_output != "*":
+				resources_list[resource] = resources_list.get(resource,0) + bytes			
+				top_k_resources = top_k_elements({resource: resources_list[resource]}, 
+													top_k_resources)
 			
-			timestamps, top_k_busiest_windows, \
-			 curr_win_length = find_busiest_windows(timestamp, timestamps,
-													top_k_busiest_windows,
-													curr_win_length)	
-
-			blocked_status, flagged_hosts_list, \
-			 blocked_hosts_list = blocked(host, timestamp, 
-			 								resource, response_code, 
-			 								flagged_hosts_list, 
-											blocked_hosts_list)
+			if feature3_output != "*":	
+				timestamps, top_k_busiest_windows, \
+				 curr_win_length = find_busiest_windows(timestamp, timestamps,
+														top_k_busiest_windows,
+														curr_win_length)	
+			if feature4_output != "*":
+				blocked_status, flagged_hosts_list, \
+				 blocked_hosts_list = blocked(host, timestamp, 
+				 								resource, response_code, 
+				 								flagged_hosts_list, 
+												blocked_hosts_list)
+				if blocked_status:
+					blocked_log += 1
+					blocked_attempts.append(server_log)
 
 			str_date = str_timestamp.split(":")[0]
+			#print str_date
 			daily_hits[str_date] += 1
+			#print daily_hits[str_date]
 
-			if blocked_status:
-				blocked_log += 1
-				blocked_attempts.append(server_log)
 			if no_of_logs % 100000 == 0:
 				print no_of_logs," logs processed"
 	
-	if curr_win_length >= top_k_busiest_windows[0][0]:
-		k = 1
-		for i in xrange(curr_win_length-1):
-			c = k - i
-			if timestamps[i] != timestamps[i-1]:
-				for j in xrange(k,curr_win_length):
-					if timestamps[j] - timestamps[i] < timedelta(minutes=60):
-						c += 1
-					else:
-						break
-				
-				top_k_busiest_windows = top_k_elements(
-									{ts_to_str(timestamps[i]): c},
-									top_k_busiest_windows)
-				k = j
-		top_k_busiest_windows = top_k_elements(
-									{ts_to_str(timestamps[i]): 1},
-									top_k_busiest_windows)
-		if top_k_busiest_windows[0][1] == ts_to_str(datetime(1900, 01, 01, 00, 00, 00)):
-			heapq.heappop(top_k_busiest_windows)
+	if feature3_output != "*":
+		if curr_win_length >= top_k_busiest_windows[0][0]:
+			k = 1
+			for i in xrange(curr_win_length-1):
+				c = k - i
+				if timestamps[i] != timestamps[i-1]:
+					for j in xrange(k,curr_win_length):
+						if timestamps[j] - timestamps[i] < timedelta(minutes=60):
+							c += 1
+						else:
+							break
+					
+					top_k_busiest_windows = top_k_elements(
+										{ts_to_str(timestamps[i]): c},
+										top_k_busiest_windows)
+					k = j
+			top_k_busiest_windows = top_k_elements(
+										{ts_to_str(timestamps[i]): 1},
+										top_k_busiest_windows)
+			if top_k_busiest_windows[0][1] == ts_to_str(datetime(1900, 01, 01, 00, 00, 00)):
+				heapq.heappop(top_k_busiest_windows)
 
-	with open(feature1_output,"w") as f1_file:
-		top_k_host = sort_heap(top_k_host)
-		for pair in iter(top_k_host):
-			f1_file.write(''.join([pair[1],',',str(pair[0]),"\n"]))
+	if feature1_output != "*":
+		with open(feature1_output,"w") as f1_file:
+			top_k_host = sort_heap(top_k_host)
+			for pair in iter(top_k_host):
+				f1_file.write(''.join([pair[1],',',str(pair[0]),"\n"]))
 
-	with open(feature2_output,"w") as f2_file:
-		top_k_resources = sort_heap(top_k_resources)
-		for pair in iter(top_k_resources):
-			f2_file.write(''.join([pair[1],"\n"]))
+	if feature2_output != "*":
+		with open(feature2_output,"w") as f2_file:
+			top_k_resources = sort_heap(top_k_resources)
+			for pair in iter(top_k_resources):
+				f2_file.write(''.join([pair[1],"\n"]))
 
-	with open(feature3_output,"w") as f3_file:
-		top_k_busiest_windows = sort_heap(top_k_busiest_windows)
-		for pair in iter(top_k_busiest_windows):
-			f3_file.write(''.join([pair[1],',',str(pair[0]),"\n"]))
+	if feature3_output != "*":
+		with open(feature3_output,"w") as f3_file:
+			top_k_busiest_windows = sort_heap(top_k_busiest_windows)
+			for pair in iter(top_k_busiest_windows):
+				f3_file.write(''.join([pair[1],',',str(pair[0]),"\n"]))
 
-	with open(feature4_output,"w") as f4_file:
-		for blocked_log in iter(blocked_attempts):
-			f4_file.write(blocked_log)
+	if feature4_output != "*":
+		with open(feature4_output,"w") as f4_file:
+			for blocked_log in iter(blocked_attempts):
+				f4_file.write(blocked_log)
 
 	with open(extra_f5_output,"w") as f5_file:
-		daily_hits = sorted(daily_hits)
-		for dates in iter(daily_hits):
-			f5_file.write(dates)
+		for dates in iter(sorted(daily_hits)):
+			f5_file.write(''.join([dates,',',str(daily_hits[dates]),'\n']))
+
 if __name__ == "__main__":
 	analyze_server_logs()

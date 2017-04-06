@@ -23,6 +23,9 @@ List the top 10 busiest (or most frequently visited) 60-minute periods
 ### Feature 4: 
 Detect patterns of three failed login attempts from the same IP address over 20 seconds so that all further attempts to the site can be blocked for 5 minutes. Log those possible security breaches.
 
+### Feature 5: 
+This add-on feature lists the daily hits to the server in the ascending order of the dates to generate time series data.
+
 ### Other considerations and optional features
 It's critical that these features don't take too long to run. For example, if it took too long to detect three failed login attempts, further traffic from the same IP address couldn’t be blocked immediately, and that would present a security breach.
 This dataset is inspired by real NASA web traffic, which is very similar to server logs from e-commerce and other sites. Monitoring web traffic and providing these analytics is a real business need, but it’s not the only thing you can do with the data. Feel free to implement additional features that you think might be useful.
@@ -35,6 +38,8 @@ With this approach, I am also able to save a lot of memory since only minimal da
 However, trade-off of this approach is that it makes too many function calls, too many arguments passing which is making the overall analysis slow. But it is speedy enough to make real-time decision like feature 4 if breach is found. Using HashMaps and Heaps have given me a huge advantage in terms of running time. Since I have considered this data as a streaming data, I had to build my own version of Python default `heapq.nlargest()` called  `top_k_elements()`.
 
 So this approach is well-suitable for real world scenario even if the overall execution time might be slow compared to other solutions.
+
+My code is such that it can run on distributed systems as well using MapReduce function. It's also quite modular such that there is a seperate function to generate each feature. I have also developed some utily function, eg. `top_k_elements`, `str_to_ts`, `ts_to_str`, `sort_heap` to make the code as disconnected as possible.
 
 ### Feature 1 
 List in descending order the top 10 most active hosts/IP addresses that have accessed the site.
@@ -149,6 +154,22 @@ e.g., `log.txt`
     ...
     
 In the above example, the 2nd line shows a failed login (HTTP reply code of 401) followed by a successful login (HTTP reply code of 200) two seconds later from the same IP address.
+
+### Feature 5
+List in daily hits on the website in ascending order of the date
+
+Write to a file named `dailyhits.txt`, the count of daily total hits to the website in the ascending order of the date. This feature helps to create a time-series, which can be analyzed when the load to the server is highest, lowest etc. Based on this data, we can make decision for scaling up or down of the hosting server 
+
+e.g., `dailyhits.txt`:
+
+    01/Jul/1995,10000
+    02/Jul/1995,2000
+    03/Jul/1995:450544
+    04/Jul/1995:6562
+    …
+
+Solving feature 5:
+I am using the same approach as used in feature 1,2,3, that use a `Counter` (subclass of Python dictionary) to store the count. And at the end I am printing the solution in ascending order of the dates.
 
 ## Repo directory structure
 
