@@ -32,7 +32,7 @@ I have implemented the code in such a manner that the data is trated as streamin
 
 With this approach, I am also able to save a lot of memory since only minimal data will be in memory at a moment. And this gives an opportunity to scale up the analysis ability of this code. Because if the log size is too large to fit in local system, we can not perform analysis after reading and storing details of all the logs and then perform analysis.  
 
-However, trade-off of this approach is that it makes too many function calls, too many arguments passing which is making the overall analysis slow. But it is speedy enough to make real-time decision like feature 4 if breach is found. Using HashMaps and Heaps have given me a huge advantage in terms of running time. Since I have considered this data as a streaming data, I had to build my own version of Python default `heapq.nlarget()` called  `top_k_elements()`.
+However, trade-off of this approach is that it makes too many function calls, too many arguments passing which is making the overall analysis slow. But it is speedy enough to make real-time decision like feature 4 if breach is found. Using HashMaps and Heaps have given me a huge advantage in terms of running time. Since I have considered this data as a streaming data, I had to build my own version of Python default `heapq.nlargest()` called  `top_k_elements()`.
 
 So this approach is well-suitable for real world scenario even if the overall execution time might be slow compared to other solutions.
 

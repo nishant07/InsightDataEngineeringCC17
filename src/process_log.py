@@ -144,17 +144,15 @@ def blocked(host, timestamp, resource, response_code,
 			if resource == "/login" and response_code == "401":
 				flagged_hosts_list[host] = [timestamp]
 		else:
-			while len(flagged_hosts_list[host]) <= NO_OF_ALLOWED_ATTEMPTS - 2:
+			if len(flagged_hosts_list[host]) <= NO_OF_ALLOWED_ATTEMPTS - 2:
 				if resource == "/login":
 					if response_code == "401":
 						flagged_hosts_list[host].append(timestamp)
 					elif response_code == "200":
 						del flagged_hosts_list[host]
-						break
 					else:
 						pass
-			if host in flagged_hosts_list:
-				if len(flagged_hosts_list[host]) == NO_OF_ALLOWED_ATTEMPTS - 1:
+			elif len(flagged_hosts_list[host]) == NO_OF_ALLOWED_ATTEMPTS - 1:
 					if resource == "/login":
 						if response_code == "401":
 							flagged_hosts_list[host].append(timestamp)
@@ -163,7 +161,8 @@ def blocked(host, timestamp, resource, response_code,
 							del flagged_hosts_list[host]
 						else:
 							pass
-
+			else:
+				pass
 	return (blocked_status, flagged_hosts_list, blocked_hosts_list)
 
 def decompose_server_log(server_log):
@@ -196,10 +195,11 @@ def analyze_server_logs():
 	""" Main function from which the execution begins for
 		the implementation of all the features.
 	"""
-	feature1_output = argv[1] # "../log_output/hosts.txt"
-	feature2_output = argv[2] # "../log_output/resources.txt"
-	feature3_output = argv[3] # "../log_output/hours.txt"
-	feature4_output = argv[4] #"../log_output/blocked.txt"		
+	feature1_output = argv[2] # "../log_output/hosts.txt"
+	feature2_output = argv[3] # "../log_output/resources.txt"
+	feature3_output = argv[4] # "../log_output/hours.txt"
+	feature4_output = argv[5] #"../log_output/blocked.txt"		
+	extra_f5_output = "./log_output/dailyhits.txt"
 
 	host_list = Counter()
 	top_k_host = []
@@ -216,6 +216,8 @@ def analyze_server_logs():
 	blocked_attempts = []
 	no_of_logs = 0
 	blocked_log = 0
+
+	daily_hits = Counter()
 
 	with open(argv[1],"r") as input_file:		
 		for server_log in iter(input_file.readline,''):
@@ -251,6 +253,9 @@ def analyze_server_logs():
 			 								resource, response_code, 
 			 								flagged_hosts_list, 
 											blocked_hosts_list)
+
+			str_date = str_timestamp.split(":")[0]
+			daily_hits[str_date] += 1
 
 			if blocked_status:
 				blocked_log += 1
@@ -297,6 +302,10 @@ def analyze_server_logs():
 	with open(feature4_output,"w") as f4_file:
 		for blocked_log in iter(blocked_attempts):
 			f4_file.write(blocked_log)
-			
+
+	with open(extra_f5_output,"w") as f5_file:
+		daily_hits = sorted(daily_hits)
+		for dates in iter(daily_hits):
+			f5_file.write(dates)
 if __name__ == "__main__":
 	analyze_server_logs()
